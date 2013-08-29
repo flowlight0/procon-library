@@ -1,11 +1,13 @@
 /*********************************************************
-// UnionFind
-//      find  : O(logn)
-// 	weight: O(logn)
-// 	same  : O(logn)
-// 
-// verified at
-// http://www.spoj.com/problems/MST/ (only find and same are used.)
+UnionFind
+
+find  : O(logn)
+weight: O(logn)
+same  : O(logn)
+unite : O(logn)
+
+verified at
+http://www.spoj.com/problems/MST/ (only find, same and unite are used.)
 ***********************************************************/
 		
 #include <vector>
