@@ -9,6 +9,8 @@ answer these query in O(log N) times.
 verified at
  pku 3468 (only add and sum)
 
+
+kyuridenamidaさんの記事を参考にしてます。
 ***************************************/
 
 #include <algorithm>
