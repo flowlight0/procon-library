@@ -25,17 +25,6 @@ class MaxFlow{
   std::vector<std::vector<edge> > G;
   std::vector<int> level;
   std::vector<int> iter;
-  
-public:
-  MaxFlow(int V) :
-    G(std::vector<std::vector<edge> >(V)),
-    level(std::vector<int>(V)),
-    iter (std::vector<int>(V)) { }
-  
-  void add_edge(int from, int to, ll cap){
-    G[from].push_back(edge(to, cap, G[to].size()));
-    G[to].push_back(edge(from, 0, G[from].size() - 1));
-  }
 
   void bfs(int s){
     std::fill(level.begin(), level.end(), -1);
@@ -53,12 +42,11 @@ public:
       }
     }
   }
-  
+
+    
   ll dfs(int v, int t, ll f){
     if(v == t) return f;
-    
     for(int &i = iter[v]; i < (int)G[v].size(); i++){
-      
       edge &e = G[v][i];
       if(e.cap > 0 && level[e.to] > level[v]){
 	ll d = dfs(e.to, t, std::min(f, e.cap));
@@ -70,6 +58,17 @@ public:
       }
     }
     return 0;
+  }
+  
+public:
+  MaxFlow(int V) :
+    G(std::vector<std::vector<edge> >(V)),
+    level(std::vector<int>(V)),
+    iter (std::vector<int>(V)) { }
+  
+  void add_edge(int from, int to, ll cap){
+    G[from].push_back(edge(to, cap, G[to].size()));
+    G[to].push_back(edge(from, 0, G[from].size() - 1));
   }
 
   ll solve(int s, int t){
