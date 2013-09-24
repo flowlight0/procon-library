@@ -18,7 +18,7 @@ http://poj.org/problem?id=2914
 template <typename T> class MinCut{
   typedef std::vector<std::vector<T> > Graph;
   typedef std::set<int>                Cut;
-
+  
   int   N;
   Graph G;
   
