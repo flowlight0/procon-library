@@ -9,7 +9,8 @@ Suffix ArrayからのLCPのO(N)構築
 Juha Karkkainen and Peter Sanders "Simple Linear Work Suffix Array Construction"
 
 verified at
-http://www.spoj.com/problems/SARRAY/
+http://www.spoj.com/problems/SARRAY/ (構築)
+http://www.spoj.com/problems/SUBST1/ (LCP)
 
 *******************************************************/
 
@@ -27,11 +28,13 @@ class SuffixArray{
   size_t vec_size;
   Array  org_vec;
   Array  suf_arr;
-
+  Array  lcp_arr;
+  Array  rank;
+  
   inline bool leq(int a1, int a2, int b1, int b2){
     return a1 != b1 ? a1 < b1 : a2 <= b2;
   }
-
+  
   inline bool leq(int a1, int a2, int a3, int b1, int b2, int b3){
     return a1 != b1 ? a1 < b1 : leq(a2, a3, b2, b3);
   }
@@ -53,13 +56,13 @@ class SuffixArray{
       count[i] = sum;
       sum += tmp;
     }
-
+    
     for(int i = 0; i < n; i++){
       b[count[s[a[i]+offset]]++] = a[i];
     }
   }
-
-  void build(const Array &S, Array &suf, int n){
+  
+  void build_sa(const Array &S, Array &suf, int n){
     int n0  = (n + 2) / 3;
     int n1  = (n + 1) / 3;
     int n2  = n / 3;
@@ -95,7 +98,7 @@ class SuffixArray{
     }
     
     if(name < n02){
-      build(S12, suf12, n02);
+      build_sa(S12, suf12, n02);
       for(int i = 0; i < n02; i++) S12[suf12[i]] = i + 1;
     }else{
       for(int i = 0; i < n02; i++) suf12[S12[i] - 1] = i;
@@ -108,8 +111,6 @@ class SuffixArray{
     
     radix_pass(S0, suf0, S, 0, n0, S.size());
     
-    
-
     int t = n0 - n1, p = 0, k = 0;
     while(t < n02 && p < n0){
 #define GetI() (suf12[t]<n0 ? suf12[t]*3+1 : (suf12[t]-n0)*3+2)
@@ -129,8 +130,32 @@ class SuffixArray{
     }
     while(t < n02){ suf[k++] = GetI(); t++;}
     while(p < n0 ){ suf[k++] = suf0[p++]; }
-}
+  }
 
+  void build_lcp(){
+
+    for(size_t i = 0; i < vec_size; i++){
+      rank[suf_arr[i]] = i;
+    }
+    
+    int h = 0;
+    
+    for(size_t i = 0; i < vec_size; i++){
+      size_t j = vec_size;
+      
+      if((size_t)rank[i] + 1 < vec_size){
+        j = suf_arr[rank[i] + 1];
+      }
+      
+      if(h > 0) h--;
+      
+      for(;j + h < vec_size && i + h < vec_size; h++){
+        if(org_vec[j + h] != org_vec[i + h]) break;
+      }
+      lcp_arr[rank[i]] = h;
+    }
+  }
+  
   
 public:
   SuffixArray(const Array &vec){ construct(vec);}
@@ -144,20 +169,36 @@ public:
       org_vec.push_back(0);
     }
     
-    suf_arr = Array(org_vec.size());
-    build(org_vec, suf_arr, vec_size);
+    suf_arr.resize(org_vec.size());
+    lcp_arr.resize(org_vec.size());
+    rank.resize(org_vec.size());
+    
+    build_sa (org_vec, suf_arr, vec_size);
+    build_lcp();
   }
-
-  int operator[](size_t pos) const {return suf_arr[pos]; }
+  
+  int operator[](size_t pos) const { return suf_arr[pos]; }
+  int height    (size_t pos) const { return lcp_arr[pos]; }
+  // int rank(size_t pos) const { return rank[pos + 1]; }
+  size_t size() const { return vec_size; }
 };
 
 
+// #define SARRAY
+#ifndef SARRAY
+
+#define STRLCP
+
+#endif
 
 
-// solution for http://www.spoj.com/problems/SARRAY/
 #include <cstdio>
 #include <cstring>
 using namespace std;
+ 
+#ifdef SARRAY
+      
+// solution for http://www.spoj.com/problems/SARRAY/
 
 int main(){
   char buf[100010];
@@ -171,6 +212,31 @@ int main(){
   for(size_t i = 0; i < vec.size(); i++){
     printf("%d\n", sa[i]);
   }
-  
+  return 0;
 }
 
+#endif
+
+#ifdef STRLCP
+ 
+int main(){
+  int T;
+  char buf[100010];
+  
+  scanf("%d", &T);
+  while(T--){
+    scanf("%s", buf);
+    
+    int n = strlen(buf);
+    long long res = (long long)n * (n + 1) / 2;
+    
+    vector<int> str(buf, buf + n);
+    SuffixArray sa(str);
+    
+    for(int i = 0; i < n; i++) res -= sa.height(i);
+
+    printf("%lld\n", res);
+  }
+}
+ 
+#endif
