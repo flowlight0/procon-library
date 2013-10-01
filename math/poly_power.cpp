@@ -1,9 +1,15 @@
 // m項間多項式のn項目をO(m^2 log(n))で計算
-//
+// 
 // a_m = coef[0] * a_0 + ... + coef[m-1] * a_{m-1} + coef[m] * d
 // となる配列に対してpoly_powは
 // a_n = ret[0] * a_0 + ... + ret[m-1] * a_{m-1} + ret[m] * d
 // となる配列をかえす
+// 
+// reference
+// http://d.hatena.ne.jp/wata_orz/20090922/1253615708
+// 
+// verified at
+// http://tdpc.contest.atcoder.jp/tasks/tdpc_fibonacci (not enough)
 
 
 #include <cassert>
