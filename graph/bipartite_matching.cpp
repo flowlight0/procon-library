@@ -3,6 +3,9 @@ Hopcroft–Karp algorithm O(|E| |V|^{1/2})
 
 verified at
 http://www.spoj.com/problems/MATCHING/
+
+reference
+http://en.wikipedia.org/wiki/Hopcroft%E2%80%93Karp_algorithm
  ************************************************************/
 
 
