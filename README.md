@@ -10,6 +10,7 @@ Graph
 * Maximum Flow(Dinic)
 * Minimum Cut (Shoer-Wagner)
 * Bipartite Matching(Hopcroft-Karp)
+* Strong Connectted Components
 
 String
 ----------------- 
