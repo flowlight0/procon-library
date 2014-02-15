@@ -17,6 +17,6 @@ test.o: $(HEADERS)
 clean:
 	rm -f test $(OBJS)
 
-# check-syntax:
-# 	$(CXX) $(CXXFLAGS) -pedantic -fsyntax-only $(CHK_SOURCES)
+check-syntax:
+	$(CXX) $(CXXFLAGS) -pedantic -fsyntax-only $(CHK_SOURCES)
 

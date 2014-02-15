@@ -24,7 +24,6 @@ member method
 #include <vector>
 #include <cstdint>
 #include <algorithm>
-#include <map>
 #include <set>
 #include <iostream>
 
@@ -59,7 +58,7 @@ public:
         LBool operator^  (bool b ) const { return LBool(x^b); }
         inline int ToInt() const { return x; }
     };
-    
+
     const LBool LFalse = LBool(0);
     const LBool LTrue  = LBool(1);
     const LBool LUndef = LBool(2);
@@ -78,11 +77,52 @@ private:
     vector<bool>    seen;
     vector<Lit>     trail;
     vector<int>     trail_lim;
+
+    double         var_inc;
+    vector<double> activity;
+    set<pair<double, int> > order;
     
     inline LBool Value(int x) const { return assign[x]; }
     inline LBool Value(Lit p) const { return assign[p.Var()] ^ p.Sign(); }
+    inline int DecisionLevel(){ return trail_lim.size();}
+    
+    void IncreaseActivity(int x){
+        auto p = make_pair(activity[x], x);
+        activity[x] += var_inc;
+        
+        if (order.count(p)){
+            order.erase(p);
+            order.insert(make_pair(activity[x], x));
+        }
+        
+        if (activity[x] > 1e30){
+            set<pair<double, int> > new_order;
+            for (auto &p : order){
+                new_order.insert(make_pair(p.first * 1e-20, p.second));
+                activity[p.second] *= 1e-20;
+            }
+            var_inc *= 1e-20;
+            order = new_order;
+        }
+    }
+    
+    int SelectVariable(){
+        while (!order.empty()){
+            auto p = *order.rbegin();
+            order.erase(p);
+            assert(p.first == activity[p.second]);
+            if (Value(p.second) == LUndef) return p.second;
+        }
+        return -1;
+    }
 
+    void UndoActivity(int x){
+        auto p = make_pair(activity[x], x);
+        if (order.count(p) == 0) order.insert(p);
+    }
+    
     void Init(){
+        nVars = 0;
         for (auto c : clauses)
             for (auto l : *c)
                 nVars = max(nVars, l.Var() + 1);
@@ -90,13 +130,15 @@ private:
         trail.clear();
         trail_lim.clear();
         
-        assign .resize(nVars, LUndef);
-        level  .resize(nVars, -1);
-        reason .resize(nVars, NULL);
-        seen   .resize(nVars, false);
+        assign   .resize(nVars, LUndef);
+        level    .resize(nVars, -1);
+        reason   .resize(nVars, NULL);
+        seen     .resize(nVars, false);
+        activity .resize(nVars, 0.0);
+        var_inc = 1.01;
+        for (int v = 1; v < nVars; v++) order.insert(make_pair(0.0, v));
     }
-    
-    
+
     void Assign(Lit p, clause *c){
         assert(Value(p) == LUndef);
         assign[p.Var()] = LBool(!p.Sign());
@@ -111,14 +153,12 @@ private:
             int x     = trail[c].Var();
             assign[x] = LUndef;
             reason[x] = NULL;
+            UndoActivity(x);
         }
         trail.resize(trail_lim[level]);
         trail_lim.resize(level);
         qhead = trail.size();
     }
-    
-    
-    inline int DecisionLevel(){ return trail_lim.size();}
     
     void Analyze(clause *confl, vector<Lit> &out, int &bt_level){
         int pathC    = 0;
@@ -134,6 +174,7 @@ private:
                 Lit q = c[j];
                 if (q != p && !seen[q.Var()] && level[q.Var()] > 0){
                     seen[q.Var()] = true;
+                    IncreaseActivity(q.Var());
                     if (level[q.Var()] >= DecisionLevel()){
                         pathC++;
                     } else{
@@ -141,6 +182,7 @@ private:
                         bt_level = max(bt_level, level[q.Var()]);
                     }            
                 }
+                
             }
             while (!seen[trail[index--].Var()]);
             p     = trail[index + 1];
@@ -151,22 +193,6 @@ private:
         out[0] = ~p;
         for (auto l : out) seen[l.Var()] = false;
     }
-    
-    int NextVar(){
-        for (auto c : clauses){
-            bool ok = false;
-            for (Lit l : *c)
-                if (Value(l) == LTrue){
-                    ok = true;
-                    break;
-                }
-            if (ok) continue;
-            for (Lit l : *c)
-                if (Value(l) == LUndef)
-                    return l.Var();
-        }
-        return -1;
-    };
     
     void AddClause(const vector<Lit> &lits, bool learnt){
         clause *c = new clause;
@@ -230,8 +256,9 @@ public:
                 Analyze(confl, learnt, bt_level);
                 AddClause(learnt, true);
                 CancelUntil(bt_level);
+                var_inc *= 1.01;
             } else {
-                int next = NextVar();
+                int next = SelectVariable();
                 if (next == -1){
                     model.resize(nVars, false);
                     for (int v = 1; v < nVars; v++)
@@ -242,6 +269,7 @@ public:
                 Assign(~Lit(next), NULL);
             }
         }
+        
     }
 };
 #endif
