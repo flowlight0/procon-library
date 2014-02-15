@@ -11,6 +11,7 @@ Graph
 * Minimum Cut (Shoer-Wagner)
 * Bipartite Matching(Hopcroft-Karp)
 * Strong Connectted Components
+* Minimum Mean Cycle(Karp)
 
 String
 ----------------- 
