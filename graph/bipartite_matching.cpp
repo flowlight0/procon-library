@@ -36,7 +36,7 @@ class BipartiteMatching{
       for(size_t i = 0; i < graph[v].size(); i++){
         int w = graph[v][i], nextv = match[w];
         if(nextv == -1){
-          done = false;
+            done = false;
         }else if(level[nextv] == -1){
           level[nextv] = level[v] + 1;
           que.push(nextv);
@@ -67,8 +67,8 @@ public:
     graph(vector<vector<int> >(V)){}
   
   void add_edge(int from, int to){
-    assert(0 <= from && from < V && V <= to && to < V + W);
-    graph[from].push_back(to);
+      assert(0 <= from && from < V && 0 <= to && to < W);
+      graph[from].push_back(V + to);
   }
   
   int solve(){

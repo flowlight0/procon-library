@@ -2,6 +2,7 @@
 CDCL-SAT solver for competitive programming
 - Conflict Driven Clause Learning
 - VSIDS
+- Watched Literals
 
 each variable is represented by integer from 1 to V
 (where V is maximum absolute value in all clauses)
@@ -65,6 +66,13 @@ public:
     const Lit LitUndef = Lit();
     
     typedef vector<Lit> clause;
+
+    struct Watcher{
+        clause *c;
+        Lit blocker;
+        Watcher(){};
+        Watcher(clause *c, Lit blocker) : c(c), blocker(blocker) {}
+    };
     
 private:
     int   nVars;
@@ -77,7 +85,8 @@ private:
     vector<bool>    seen;
     vector<Lit>     trail;
     vector<int>     trail_lim;
-
+    vector<vector<Watcher> > watch;
+    
     double         var_inc;
     vector<double> activity;
     set<pair<double, int> > order;
@@ -89,18 +98,15 @@ private:
     void IncreaseActivity(int x){
         auto p = make_pair(activity[x], x);
         activity[x] += var_inc;
-        
         if (order.count(p)){
             order.erase(p);
             order.insert(make_pair(activity[x], x));
         }
-        
         if (activity[x] > 1e30){
             set<pair<double, int> > new_order;
             for (auto &p : order){
                 new_order.insert(make_pair(p.first * 1e-20, p.second));
-                activity[p.second] *= 1e-20;
-            }
+                activity[p.second] *= 1e-20; }
             var_inc *= 1e-20;
             order = new_order;
         }
@@ -135,10 +141,14 @@ private:
         reason   .resize(nVars, NULL);
         seen     .resize(nVars, false);
         activity .resize(nVars, 0.0);
+        watch.resize    (nVars * 2);
         var_inc = 1.01;
         for (int v = 1; v < nVars; v++) order.insert(make_pair(0.0, v));
+        for (auto c : clauses){
+            watch[(~(*c)[0]).ToInt()].push_back(Watcher(c, (*c)[1]));
+            watch[(~(*c)[1]).ToInt()].push_back(Watcher(c, (*c)[0])); }
     }
-
+    
     void Assign(Lit p, clause *c){
         assert(Value(p) == LUndef);
         assign[p.Var()] = LBool(!p.Sign());
@@ -182,7 +192,6 @@ private:
                         bt_level = max(bt_level, level[q.Var()]);
                     }            
                 }
-                
             }
             while (!seen[trail[index--].Var()]);
             p     = trail[index + 1];
@@ -196,116 +205,31 @@ private:
     
     void AddClause(const vector<Lit> &lits, bool learnt){
         clause *c = new clause;
-        for (Lit l : lits) c->push_back(l);
-        if (learnt)
-            learnts.push_back(c);
-        else
-            clauses.push_back(c);
-    }
-
-    LBool BcpClause(clause *c, bool &updated){
-        int rest = c->size();
-        for (Lit l : *c) if (Value(l) == LFalse) rest--;
-        if (rest == 0) return LFalse;
-        if (rest >= 2) return LUndef;
+        for (Lit l : lits){ c->push_back(l); cout << l << " "; }
+        cout << endl;
         
-        for (Lit l : *c)
-            if (Value(l) == LUndef){
-                Assign(l, c);
-                updated = true;
+        if (c->size() == 0){
+            assert(false);
+        } else if (c->size() == 1){
+            Assign((*c)[0], NULL);
+            delete c;
+        } else {
+            if (learnt){
+                assert(c->size() > 0);
+                learnts.push_back(c);
+                watch[(~lits[0]).ToInt()].push_back(Watcher(c, lits[1]));
+                watch[(~lits[1]).ToInt()].push_back(Watcher(c, lits[0]));
+            } else{
+                clauses.push_back(c);
             }
-        return LTrue;
+        }
     }
     
     clause *Bcp(){
-        bool updated = true;
-        while (updated){
-            updated = false;
-            for (auto c: clauses)
-                if (BcpClause(c, updated) == LFalse)
-                    return c;
-            for (auto c: learnts)
-                if (BcpClause(c, updated) == LFalse)
-                    return c;
-        }
-        return NULL;
-    }
-    
-public:
-    vector<bool>    model;
-    ~Mini2Sat(){
-        for (auto c : clauses) delete c;
-        for (auto c : learnts) delete c;
-    }
-    
-    void AddClause(const vector<int> &lits){
-        clause *c = new clause;
-        for (auto l : lits) c->push_back(l > 0 ? Lit(l) : ~Lit(-l));
-        AddClause(*c, false);
-        delete c;
-    }
-    
-    bool Solve(){
-        Init();
-        for(;;){
-            clause *confl = Bcp();
-            if (confl != NULL){
-                if (DecisionLevel() == 0) return false;
-                int         bt_level;
-                vector<Lit> learnt;
-                Analyze(confl, learnt, bt_level);
-                AddClause(learnt, true);
-                CancelUntil(bt_level);
-                var_inc *= 1.01;
-            } else {
-                int next = SelectVariable();
-                if (next == -1){
-                    model.resize(nVars, false);
-                    for (int v = 1; v < nVars; v++)
-                        if (assign[v] == LTrue) model[v] = true;
-                    return true;
-                }
-                trail_lim.push_back(trail.size());
-                Assign(~Lit(next), NULL);
-            }
-        }
-        
-    }
-};
-#endif
-
-/***********************************************************
-
-    struct Watcher{
-        clause *c;
-        Lit blocker;
-        Watcher(){};
-        Watcher(clause *c, Lit blocker) : c(c), blocker(blocker) {}
-    };
-    vector<vector<Watcher> > watches;
-
-
-void AddClause(const vector<Lit> &lits, bool learnt){
-        if (!learnt){
-            vector<Lit> qs = lits;
-            std::sort(qs.begin(), qs.end());
-            qs.erase(std::unique(qs.begin(), qs.end()), qs.end());
-            for (size_t i = 0; i + 1 < qs.size(); i++)
-                if (qs[i] == ~qs[i + 1])
-                    return;
-        }
-
-        clause *c = (clause*)&lits;
-        watches[~lits[0].ToInt()].push_back(Watcher(c, lits[1]));
-        watches[~lits[1].ToInt()].push_back(Watcher(c, lits[0]));
-        
-    }
-
-clause *Bcp(){
         clause *confl = NULL;
         while (qhead < trail.size()){
             Lit p = trail[qhead++];
-            vector<Watcher> &ws = watches[p.ToInt()];
+            vector<Watcher> &ws = watch[p.ToInt()];
             
             size_t i = 0, j = 0;
             for (; i < ws.size(); i++){
@@ -326,7 +250,7 @@ clause *Bcp(){
                 for (size_t k = 2; k < c.size(); k++){
                     if (Value(c[k]) != LFalse){
                         swap(c[1], c[k]);
-                        watches[~c[1].ToInt()].push_back(w);
+                        watch[(~c[1]).ToInt()].push_back(w);
                         goto NextClause;
                     }
                 }
@@ -346,8 +270,60 @@ clause *Bcp(){
         return confl;
     }
     
+public:
+    vector<bool>    model;
 
- ***********************************************************/
+    Mini2Sat(){
+        level.resize (100, -1);
+        reason.resize(100, NULL);;
+        assign.resize(100, LUndef);
+    }
+    
+    ~Mini2Sat(){
+        for (auto c : clauses) delete c;
+        for (auto c : learnts) delete c;
+    }
+    
+    void AddClause(const vector<int> &lits){
+        clause *c = new clause;
+        for (auto l : lits) c->push_back(l > 0 ? Lit(l) : ~Lit(-l));
+        AddClause(*c, false);
+        delete c;
+    }
+    
+    bool Solve(){
+        Init();
+        cerr << "#vars   : " << nVars << endl;
+        cerr << "#clauses: " << clauses.size() << endl;
+        
+        for(;;){
+            for (auto l : trail){ cout << l << " " ;}
+            cout << endl;
+            clause *confl = Bcp();
+            
+            if (confl != NULL){
+                if (DecisionLevel() == 0) return false;
+                int         bt_level;
+                vector<Lit> learnt;
+                Analyze(confl, learnt, bt_level);
+                AddClause(learnt, true);
+                CancelUntil(bt_level);
+                var_inc *= 1.01;
+            } else {
+                int next = SelectVariable();
+                if (next == -1){
+                    model.resize(nVars, false);
+                    for (int v = 1; v < nVars; v++)
+                        if (assign[v] == LTrue) model[v] = true;
+                    return true;
+                }
+                trail_lim.push_back(trail.size());
+                Assign(~Lit(next), NULL);
+            }
+        }
+    }
+};
+#endif
 
 
 
