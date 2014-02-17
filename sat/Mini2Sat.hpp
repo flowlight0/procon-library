@@ -42,7 +42,6 @@ public:
         inline int Var () const { return x >> 1; }
         inline int ToInt() const { return x; }
         friend inline Lit operator~(Lit p){ p.x ^= 1; return p; }
-        friend inline Lit operator^(Lit p, bool b){ p.x ^= b; return p;}
         friend inline bool operator<(Lit p, Lit q){ return p.x < q.x; }
         friend ostream &operator<<(ostream &out, Lit p){
             out << (p.Sign() ? "~" : "") << p.Var();
@@ -64,7 +63,6 @@ public:
     const LBool LUndef = LBool(2);
     const Lit LitUndef = Lit();
     typedef vector<Lit> clause;
-
     struct Watcher{
         clause *c;
         Lit blocker;
@@ -147,11 +145,13 @@ private:
     }
     
     void Assign(Lit p, clause *c){
-        assert(Value(p) == LUndef);
-        assign[p.Var()] = LBool(!p.Sign());
-        reason[p.Var()] = c;
-        level [p.Var()] = DecisionLevel();
-        trail.push_back(p);
+        assert(Value(p) != LFalse);
+        if (Value(p) == LUndef){
+            assign[p.Var()] = LBool(!p.Sign());
+            reason[p.Var()] = c;
+            level [p.Var()] = DecisionLevel();
+            trail.push_back(p);
+        }
     }
     
     void CancelUntil(int level){
@@ -224,7 +224,17 @@ private:
             Assign((*c)[0], NULL);
         else {
             // cout << ~(*c)[0] << " "  << ~(*c)[1] << endl;
-            if (learnt) Assign((*c)[0], c);
+            if (learnt){
+                Assign((*c)[0], c);
+                int max_i = 1;
+                int max_l = level[(*c)[1].Var()];
+                for (size_t i = 2; i < c->size(); i++)
+                    if (level[(*c)[i].Var()] > max_l){
+                        max_l = level[(*c)[i].Var()];
+                        max_i = i;
+                    }
+                swap((*c)[1], (*c)[max_i]);
+            }
             watch[(~(*c)[0]).ToInt()].push_back(Watcher(c, (*c)[1]));
             watch[(~(*c)[1]).ToInt()].push_back(Watcher(c, (*c)[0]));
             if (learnt)

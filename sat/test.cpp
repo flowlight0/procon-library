@@ -92,97 +92,102 @@ TEST(AIM_TEST, NO){
 }
 
 TEST(SUDOKU_TEST, YES){
-    // vector<string> board = {
-    //     "--A----C-----O-I",
-    //     "-J--A-B-P-CGF-H-",
-    //     "--D--F-I-E----P-",
-    //     "-G-EL-H----M-J--",
-    //     "----E----C--G---" , 
-    //     "-I--K-GA-B---E-J" , 
-    //     "D-GP--J-F----A--" , 
-    //     "-E---C-B--DP--O-" , 
-    //     "E--F-M--D--L-K-A" , 
-    //     "-C--------O-I-L-" , 
-    //     "H-P-C--F-A--B---" , 
-    //     "---G-OD---J----H" , 
-    //     "K---J----H-A-P-L" , 
-    //     "--B--P--E--K--A-" , 
-    //     "-H--B--K--FI-C--" , 
-    //     "--F---C--D--H-N-" , 
-    // };
+    vector<string> board = {
+        "--A----C-----O-I", 
+        "-J--A-B-P-CGF-H-", 
+        "--D--F-I-E----P-", 
+        "-G-EL-H----M-J--", 
+        "----E----C--G---", 
+        "-I--K-GA-B---E-J", 
+        "D-GP--J-F----A--", 
+        "-E---C-B--DP--O-", 
+        "E--F-M--D--L-K-A", 
+        "-C--------O-I-L-", 
+        "H-P-C--F-A--B---", 
+        "---G-OD---J----H", 
+        "K---J----H-A-P-L", 
+        "--B--P--E--K--A-", 
+        "-H--B--K--FI-C--", 
+        "--F---C--D--H-N-", 
+    };
     
-    // Mini2Sat solver;
-    // int n = board.size();
-    // vector<vector<int> > cs;
-    
-    // for (int r = 0; r < n; r++){
-    //     for (int j = 0; j < n; j++){
-    //         for (int k = j + 1; k < n; k++){
-    //             for (int m = 0; m < n; m++){
-    //                 int ac = (n * n) * m + (r * n + j);
-    //                 int bc = (n * n) * m + (r * n + k);
-    //                 cs.push_back({-ac, -bc});
-    //             }
-    //         }
-    //     }
-    // }
-    
-    // for (int c = 0; c < n; c++){
-    //     for (int j = 0; j < n; j++){
-    //         for (int k = j + 1; k < n; k++){
-    //             for (int m = 0; m < n; m++){
-    //                 int ac = (n * n) * m + (j * n + c);
-    //                 int bc = (n * n) * m + (k * n + c);
-    //                 cs.push_back({-ac, -bc});
-    //             }
-    //         }
-    //     }
-    // }
-    
-    // int d = sqrt(n) + 0.5;
-    // for (int r1 = 0; r1 < n; r1++){
-    //     for (int r2 = 0; r2 < n; r2++){
-    //         for (int c1 = 0; c1 < n; c1++){
-    //             for (int c2 = 0; c2 < n; c2++){
-    //                 if (r1 / d != r2 / d || c1 / d != c2 / d) continue;
-    //                 if (r1 == r2 && c1 == c2) continue;
-    //                 for (int m = 0; m < n; m++){
-    //                     int ac = (n * n) * m + (r1 * n + c1);
-    //                     int bc = (n * n) * m + (r2 * n + c2);
-    //                     cs.push_back({-ac, -bc});
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
+    Mini2Sat solver;
+    int n = board.size();
+    vector<vector<int> > cs;
 
-    // for (int r = 0; r < n; r++){
-    //     for (int c = 0;  c < n; c++){
-    //         if (board[r][c] == '-'){
-    //             vector<int> v(n);
-    //             for (int m = 0; m < n; m++) v[m] = (n * n) * m + r * n + c;
-    //             cs.push_back(v);
-    //         } else {
-    //             int m = board[r][c] - 'A';
-    //             cs.push_back({(n * n) * m + r * n + c});
-    //         }
-    //     }
-    // }
-    // ASSERT_TRUE(solver.Solve(cs));
+    for (int r = 0; r < n; r++){
+        for (int c = 0;  c < n; c++){
+            if (board[r][c] == '-'){
+                vector<int> v(n);
+                for (int m = 0; m < n; m++) v[m] = (n * n) * m + (r * n + c) + 1;
+                cs.push_back(v);
+            } else {
+                int m = board[r][c] - 'A';
+                cs.push_back({(n * n) * m + (r * n + c) + 1});
+            }
+        }
+    }
+    
+    for (int r = 0; r < n; r++){
+        for (int j = 0; j < n; j++){
+            for (int k = j + 1; k < n; k++){
+                for (int m = 0; m < n; m++){
+                    int ac = (n * n) * m + (r * n + j) + 1;
+                    int bc = (n * n) * m + (r * n + k) + 1;
+                    cs.push_back({-ac, -bc});
+                }
+            }
+        }
+    }
+    
+    for (int c = 0; c < n; c++){
+        for (int j = 0; j < n; j++){
+            for (int k = j + 1; k < n; k++){
+                for (int m = 0; m < n; m++){
+                    int ac = (n * n) * m + (j * n + c) + 1;
+                    int bc = (n * n) * m + (k * n + c) + 1;
+                    cs.push_back({-ac, -bc});
+                }
+            }
+        }
+    }
+    
+    int d = sqrt(n) + 0.5;
+    for (int r1 = 0; r1 < n; r1++){
+        for (int r2 = 0; r2 < n; r2++){
+            for (int c1 = 0; c1 < n; c1++){
+                for (int c2 = 0; c2 < n; c2++){
+                    if (r1 / d != r2 / d || c1 / d != c2 / d) continue;
+                    if (r1 == r2 && c1 == c2) continue;
+                    for (int m = 0; m < n; m++){
+                        int ac = (n * n) * m + (r1 * n + c1) + 1;
+                        int bc = (n * n) * m + (r2 * n + c2) + 1;
+                        cs.push_back({-ac, -bc});
+                    }
+                }
+            }
+        }
+    }
 
-    // cout << endl;
-    // for (int r = 0; r < n; r++){
-    //     for (int c = 0; c < n; c++){
-    //         for (int m = 0; m < n; m++){
-    //             if (solver.model[(n * n) * m + r * n + c]){
-    //                 cout << (char)('A' + m);
-    //             }
-    //         }
-    //     }
-    //     cout << endl;
-    // }
-    // cout << endl;
+    
+    ASSERT_TRUE(solver.Solve(cs));
+    for (int r = 0; r < n; r++){
+        for (int c = 0; c < n; c++){
+            int cnt = 0;
+            for (int m = 0; m < n; m++){
+                if (solver.model[(n * n) * m + r * n + c + 1]){
+                    cout << (char)('A' + m);
+                    cnt++;
+                }
+            }
+            ASSERT_EQ(cnt, 1);
+        }
+        cout << endl;
+    }
+    cout << endl;
 }
+
+
 
 int main(int argc, char **argv){
     ::testing::InitGoogleTest(&argc, argv);
