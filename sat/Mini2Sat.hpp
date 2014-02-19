@@ -91,8 +91,6 @@ private:
     inline LBool Value(Lit p) const { return assign[p.Var()] ^ p.Sign(); }
     inline int DecisionLevel(){ return trail_lim.size();}
     
-    int cinc = 0;
-    int cdec = 0;
     void IncreaseActivity(int x){
         auto p = make_pair(activity[x], x);
         activity[x] += var_inc;
@@ -102,12 +100,13 @@ private:
             order.insert(make_pair(activity[x], x));
         }
 
-        if (activity[x] > 1e30){
+        if (activity[x] > 1e100){
+            cout << "HOGE" << endl;
             set<pair<double, int> > new_order;
-            for (auto &p : order){
-                new_order.insert(make_pair(p.first * 1e-20, p.second));
-                activity[p.second] *= 1e-20; }
-            var_inc *= 1e-20;
+            for (auto &p : order)
+                new_order.insert(make_pair(p.first * 1e-100, p.second));
+            for (int v = 1; v < nVars; v++) activity[v] *= 1e-100;
+            var_inc *= 1e-100;
             order = new_order;
         }
     }
@@ -146,6 +145,29 @@ private:
         for (int v = 1; v < nVars; v++) order.insert(make_pair(0.0, v));
         
         for (auto &c : cs) if (!AddClause(c, false)) return false;
+        return true;
+    }
+
+    bool SimplifyDB(){
+        if (Bcp() != NULL) return false;
+        for (auto &ws : watch){
+            size_t j = 0;
+            for (size_t i = 0; i < ws.size(); i++){
+                bool ok = false;
+                for (size_t k = 0; k < ws[i].c->size(); k++){
+                    if (Value((*ws[i].c)[k]) == LTrue) ok = true;
+                }
+                if (!ok) ws[j++] = ws[i];
+            }
+            ws.resize(j);
+        }
+        size_t j = 0;
+        for (size_t i = 0; i < clauses.size(); i++){
+            bool ok = false;
+            for (auto c : *clauses[i]) if (Value(c) == LTrue) ok = true;
+            if (!ok) clauses[j++] = clauses[i];
+        }
+        clauses.resize(j);
         return true;
     }
     
@@ -262,8 +284,7 @@ private:
                 Lit     false_lit = ~p;
                 if (c[0] == false_lit) swap(c[0], c[1]);
                 assert(c[1] == false_lit);
-                // cout << p << endl;
-                // cout << c[0] << " " << c[1] << endl;
+                
                 Lit first = c[0];
                 Watcher w(cr, first);
                 if (first != b && Value(first) == LTrue){ ws[j++] = w; continue;}
@@ -305,8 +326,10 @@ public:
             cls.push_back(cl);
         }
         if (!Init(cls)) return false;
+        if (!SimplifyDB()) return false;
         cerr << "#vars   : " << nVars << endl;
         cerr << "#clauses: " << clauses.size() << endl;
+        
         for(;;){
             // for (auto l : trail){ cout << l << " " ;} cout << endl;
             clause *confl = Bcp();
@@ -316,6 +339,7 @@ public:
                 int         bt_level;
                 vector<Lit> learnt;
                 Analyze(confl, learnt, bt_level);
+                if (learnt.size() == 1) cout << learnt[0] << endl;
                 CancelUntil(bt_level);
                 AddClause(learnt, true);
                 var_inc *= 1.01;
