@@ -1,5 +1,5 @@
 CXX = g++ -std=c++11
-CXXFLAGS = -pg -Wall -Wextra -O3
+CXXFLAGS = -g -Wall -Wextra -O3
 
 HEADERS = $(wildcard *.hpp)
 SRCS = test.cpp

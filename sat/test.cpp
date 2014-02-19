@@ -114,7 +114,7 @@ TEST(SUDOKU_TEST, YES){
     Mini2Sat solver;
     int n = board.size();
     vector<vector<int> > cs;
-
+    
     for (int r = 0; r < n; r++){
         for (int c = 0;  c < n; c++){
             if (board[r][c] == '-'){
@@ -169,7 +169,6 @@ TEST(SUDOKU_TEST, YES){
         }
     }
 
-    
     ASSERT_TRUE(solver.Solve(cs));
     for (int r = 0; r < n; r++){
         for (int c = 0; c < n; c++){
@@ -186,8 +185,6 @@ TEST(SUDOKU_TEST, YES){
     }
     cout << endl;
 }
-
-
 
 int main(int argc, char **argv){
     ::testing::InitGoogleTest(&argc, argv);

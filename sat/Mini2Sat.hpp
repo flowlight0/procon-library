@@ -91,13 +91,17 @@ private:
     inline LBool Value(Lit p) const { return assign[p.Var()] ^ p.Sign(); }
     inline int DecisionLevel(){ return trail_lim.size();}
     
+    int cinc = 0;
+    int cdec = 0;
     void IncreaseActivity(int x){
         auto p = make_pair(activity[x], x);
         activity[x] += var_inc;
+        
         if (order.count(p)){
             order.erase(p);
             order.insert(make_pair(activity[x], x));
         }
+
         if (activity[x] > 1e30){
             set<pair<double, int> > new_order;
             for (auto &p : order){
@@ -107,7 +111,8 @@ private:
             order = new_order;
         }
     }
-    
+
+    int cselect = 0;
     int SelectVariable(){
         while (!order.empty()){
             auto p = *order.rbegin();
@@ -203,8 +208,6 @@ private:
     bool AddClause(const vector<Lit> &lits, bool learnt){
         clause *c = new clause;
         for (Lit l : lits) c->push_back(l); 
-        // for (Lit l : lits){ cout << l << " ";} cout << endl;
-        
         if (!learnt){
             assert(DecisionLevel() == 0);
             sort(c->begin(), c->end());
@@ -217,13 +220,11 @@ private:
                 if (Value((*c)[i++]) != LFalse) (*c)[j++] = (*c)[i - 1];
             c->resize(j);
         }
-
         if (c->size() == 0)
             return false;
         else if (c->size() == 1)
             Assign((*c)[0], NULL);
         else {
-            // cout << ~(*c)[0] << " "  << ~(*c)[1] << endl;
             if (learnt){
                 Assign((*c)[0], c);
                 int max_i = 1;
@@ -254,7 +255,6 @@ private:
             size_t i = 0, j = 0;
             for (; i < ws.size(); ){
                 Lit b = ws[i].blocker;
-                
                 if (Value(b) == LTrue){ ws[j++] = ws[i++]; continue;}
                 
                 clause *cr        = ws[i].c; i++;
@@ -262,10 +262,8 @@ private:
                 Lit     false_lit = ~p;
                 if (c[0] == false_lit) swap(c[0], c[1]);
                 assert(c[1] == false_lit);
-
                 // cout << p << endl;
                 // cout << c[0] << " " << c[1] << endl;
-                
                 Lit first = c[0];
                 Watcher w(cr, first);
                 if (first != b && Value(first) == LTrue){ ws[j++] = w; continue;}
