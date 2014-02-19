@@ -16,6 +16,9 @@ http://www.spoj.com/problems/SARRAY/ (構築)
 http://www.spoj.com/problems/SUBST1/ (LCP)
 
 *******************************************************/
+#ifndef GUARD_SUFFIX_ARRAY
+#define GUARD_SUFFIX_ARRAY
+
 #include <string>
 #include <vector>
 #include <limits>
@@ -168,54 +171,4 @@ public:
     size_t Size() const { return vec_size; }
 };
 
-
-// #define SARRAY
-// #ifndef SARRAY
-// #define STRLCP
-// #endif
-
-// #include <cstdio>
-// #include <cstring>
-// using namespace std;
- 
-// #ifdef SARRAY
-      
-// // solution for http://www.spoj.com/problems/SARRAY/
-
-// int main(){
-//     char buf[100010];
-//     scanf("%s", buf);
-//     string str(buf, buf + strlen(buf));
-  
-//     vector<int> vec(str.size());
-//     for(size_t i = 0; i < str.size(); i++) vec[i] = str[i];
-//     SuffixArray sa(vec);
-  
-//     for(size_t i = 0; i < vec.size(); i++){
-//         printf("%d\n", sa[i]);
-//     }
-//     return 0;
-// }
-
-// #endif
-// #ifdef STRLCP
-
-// int main(){
-//     int T;
-//     char buf[100010];
-  
-//     scanf("%d", &T);
-//     while(T--){
-//         scanf("%s", buf);
-    
-//         int n = strlen(buf);
-//         long long res = (long long)n * (n + 1) / 2;
-//         vector<int> str(buf, buf + n);
-//         SuffixArray sa(str);
-//         for(int i = 0; i < n; i++) res -= sa.Height(i);
-
-//         printf("%lld\n", res);
-//     }
-// }
- 
-// #endif
+#endif

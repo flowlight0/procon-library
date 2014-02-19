@@ -10,6 +10,9 @@
  http://codeforces.com/blog/entry/3107
 ***********************************************************/
 
+#ifndef GUARD_Z_INDEX
+#define GUARD_Z_INDEX
+
 #include <vector>
 #include <string>
 
@@ -37,32 +40,4 @@ public:
     int operator[](int pos) const { return z[pos]; }
 };
 
-#include <iostream>
-#include <algorithm>
-using namespace std;
-
-int main(){
-    string S, T;
-    cin >> S >> T;
-    ZIndex lz(T + '$' + S);
-    reverse(S.begin(), S.end());
-    reverse(T.begin(), T.end());
-    ZIndex rz(T + '$' + S);
-
-    int N = S.size(), M = T.size();
-  
-    vector<int> L(N);
-    vector<int> R(N);
-    for(int i = M + 1; i <= N + M; i++){
-        L[i-M-1] = lz[i];
-        R[i-M-1] = rz[i];
-    }
-    
-    int res = 0;
-    for(int i = 0; i < N - M + 1; i++){
-        if(L[i] + R[N-i-M] == M - 1) res++;
-    }
-    cout << res << endl;
-    return 0;
-}
-
+#endif
