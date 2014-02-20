@@ -12,6 +12,8 @@ verified at
 kyuridenamidaさんの記事を参考にしてます。
 ***************************************/
 
+#ifndef GUARD_SEGMENT_TREE
+#define GUARD_SEGMENT_TREE
 
 #include <algorithm>
 #include <vector>
@@ -101,7 +103,7 @@ template <typename T> class SegTree{
             int m   = (l + r) / 2;
             int chl = k * 2 + 1;
             int chr = k * 2 + 2;
-            int lpos, rpos;
+            int lpos = -1, rpos = -1;
             T lmin = min(a, b, lpos, chl, l, m);
             T rmin = min(a, b, rpos, chr, m, r);
             merge(k);
@@ -141,42 +143,10 @@ public:
         build(0, 0, N);
     }
     
-    void add(int l, int r, T x) {add(l, r, x, 0, 0, N);}
-    T min(int l, int r, int &pos){return min(l, r, pos, 0, 0, N);}
-    T min(int l, int r){int tmp;return min(l, r, tmp);}
-    T sum(int l, int r){return sum(l, r, 0, 0, N);}
+    void Add(int l, int r, T x) {add(l, r, x, 0, 0, N);}
+    T Min(int l, int r, int &pos){pos = -1; return min(l, r, pos, 0, 0, N);}
+    T Min(int l, int r){int tmp;return min(l, r, tmp);}
+    T Sum(int l, int r){return sum(l, r, 0, 0, N);}
 };
 
-#include <cstdio>
-#include <vector>
-using namespace std;
-typedef long long ll;
-
-
-
-int main(){
-    int N, Q, a, b, c;
-    char q;
-  
-    scanf("%d%d", &N, &Q);
-
-    vector <ll> A(N);
-  
-    for(int i = 0; i < N; i++){
-        scanf("%lld", &A[i]);
-    }
-  
-    SegTree<ll> seg(A);
-  
-    while(Q--){
-        scanf(" %c", &q);
-        if(q == 'Q'){
-            scanf("%d%d", &a, &b);
-            printf("%lld\n", seg.sum(--a, b));
-        }else{
-            scanf("%d%d%d", &a, &b, &c);
-            seg.add(--a, b, c);
-        }
-    }
-    return 0;
-}
+#endif

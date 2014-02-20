@@ -23,6 +23,7 @@ http://www.spoj.com/problems/SUBST1/ (LCP)
 #include <vector>
 #include <limits>
 #include <algorithm>
+#include <stack>
 #include <iostream>
 #include <cassert>
 
@@ -34,7 +35,15 @@ class SuffixArray{
     Array  suf_arr;
     Array  lcp_arr;
     Array  rank;
-    
+
+    struct LcpInverval{
+        int up;
+        int down;
+        int next;
+        LcpInverval(){}
+        LcpInverval(int u, int d, int n) : up(u), down(d), next(n){}
+    };
+
     inline bool Leq(int a1, int a2, int b1, int b2){
         return a1 != b1 ? a1 < b1 : a2 <= b2;
     }
@@ -44,7 +53,7 @@ class SuffixArray{
     }
     
     void RadixPass(Array &a, Array &b, const Array &s,
-                    int offset, int n, int alpha_size)
+                   int offset, int n, int alpha_size)
     {
         const int least_alphabet_size = 256;
         alpha_size = std::max(alpha_size, least_alphabet_size);
@@ -61,7 +70,7 @@ class SuffixArray{
         
         for (int i = 0; i < n; i++) b[count[s[a[i]+offset]]++] = a[i];
     }
-  
+    
     void BuildSa(const Array &S, Array &suf, int n){
         int n0  = (n + 2) / 3;
         int n1  = (n + 1) / 3;
@@ -144,7 +153,7 @@ class SuffixArray{
             lcp_arr[rank[i]] = h;
         }
     }
-    
+
 public:
     SuffixArray(const Array &vec){ Construct(vec);}
     SuffixArray() {}
@@ -164,11 +173,19 @@ public:
         BuildSa (org_vec, suf_arr, vec_size);
         BuildLcp();
     }
-  
+    
     int operator[] (size_t pos) const { return suf_arr[pos]; }
     int Height     (size_t pos) const { return lcp_arr[pos]; }
     int Rank       (size_t pos) const { return rank[pos]; }
     size_t Size() const { return vec_size; }
+
+    // std::vector<LcpInverval> LcpIntervalTree(){
+    //     int n = this->Size();
+    //     std::vector<LcpInverval> intervals(n);
+    //     std::stack<int> st;
+    //     st.push(0);
+    // }
+
 };
 
 #endif

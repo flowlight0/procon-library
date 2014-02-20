@@ -101,7 +101,6 @@ private:
         }
 
         if (activity[x] > 1e100){
-            cout << "HOGE" << endl;
             set<pair<double, int> > new_order;
             for (auto &p : order)
                 new_order.insert(make_pair(p.first * 1e-100, p.second));
@@ -111,7 +110,6 @@ private:
         }
     }
 
-    int cselect = 0;
     int SelectVariable(){
         while (!order.empty()){
             auto p = *order.rbegin();
@@ -143,34 +141,10 @@ private:
         watch.resize    (nVars * 2);
         var_inc = 1.01;
         for (int v = 1; v < nVars; v++) order.insert(make_pair(0.0, v));
-        
         for (auto &c : cs) if (!AddClause(c, false)) return false;
         return true;
     }
 
-    bool SimplifyDB(){
-        if (Bcp() != NULL) return false;
-        for (auto &ws : watch){
-            size_t j = 0;
-            for (size_t i = 0; i < ws.size(); i++){
-                bool ok = false;
-                for (size_t k = 0; k < ws[i].c->size(); k++){
-                    if (Value((*ws[i].c)[k]) == LTrue) ok = true;
-                }
-                if (!ok) ws[j++] = ws[i];
-            }
-            ws.resize(j);
-        }
-        size_t j = 0;
-        for (size_t i = 0; i < clauses.size(); i++){
-            bool ok = false;
-            for (auto c : *clauses[i]) if (Value(c) == LTrue) ok = true;
-            if (!ok) clauses[j++] = clauses[i];
-        }
-        clauses.resize(j);
-        return true;
-    }
-    
     void Assign(Lit p, clause *c){
         assert(Value(p) != LFalse);
         if (Value(p) == LUndef){
@@ -326,7 +300,6 @@ public:
             cls.push_back(cl);
         }
         if (!Init(cls)) return false;
-        if (!SimplifyDB()) return false;
         cerr << "#vars   : " << nVars << endl;
         cerr << "#clauses: " << clauses.size() << endl;
         
@@ -339,7 +312,6 @@ public:
                 int         bt_level;
                 vector<Lit> learnt;
                 Analyze(confl, learnt, bt_level);
-                if (learnt.size() == 1) cout << learnt[0] << endl;
                 CancelUntil(bt_level);
                 AddClause(learnt, true);
                 var_inc *= 1.01;
