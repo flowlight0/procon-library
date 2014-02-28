@@ -145,7 +145,7 @@ public:
     
     void Add(int l, int r, T x) {add(l, r, x, 0, 0, N);}
     T Min(int l, int r, int &pos){pos = -1; return min(l, r, pos, 0, 0, N);}
-    T Min(int l, int r){int tmp;return min(l, r, tmp);}
+    T Min(int l, int r){int tmp;return Min(l, r, tmp);}
     T Sum(int l, int r){return sum(l, r, 0, 0, N);}
 };
 
