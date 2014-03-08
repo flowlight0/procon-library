@@ -14,7 +14,10 @@ a negative literal ~x is represented by -x
 member method
 - bool Solve(vector<clause>) // return true if we find valid assignment
 - void AddClause(vector<int>)   // add a new clause
-- vector<int> Model() // return a valid assignment when Solve() == true
+member variables
+- vector<int> model  // a valid assignment when Solve() == true
+
+this solver does not release allocated memory.
 
 ***********************************************************/
 #ifndef GUARD_MINI2SAT
@@ -36,37 +39,28 @@ class Mini2Sat{
         Lit() : x(-1) { }
         Lit(int v, bool sign = false){ this->x = v * 2 + sign;}
         bool operator==(Lit p) const { return x == p.x; }
-        bool operator!=(Lit p) const { return x != p.x; }
         inline bool Sign() const { return x & 1; }
         inline int Var () const { return x >> 1; }
         inline int ToInt() const { return x; }
         friend inline Lit operator~(Lit p){ p.x ^= 1; return p; }
         friend inline bool operator<(Lit p, Lit q){ return p.x < q.x; }
     };
+    typedef vector<Lit>        clause;
+    typedef pair<clause*, Lit> Watcher;
     
     struct LBool{
         uint8_t x;
         LBool(uint8_t v = 0) : x(v) {}
         bool  operator== (LBool b) const { return (b.x & x & 2) || b.x == x; }
         bool  operator!= (LBool b) const { return !(*this == b); }
-        LBool operator^  (bool b ) const { return LBool(x^b); }
+        LBool operator^  (bool  b) const { return LBool(x^b); }
     };
-    
-    typedef vector<Lit> clause;
     const LBool LFalse = LBool(0);
     const LBool LTrue  = LBool(1);
     const LBool LUndef = LBool(2);
     
-    struct Watcher{
-        clause *c;
-        Lit blocker;
-        Watcher(){};
-        Watcher(clause *c, Lit blocker) : c(c), blocker(blocker) {}
-    };
-    
-    int    nVars;
-    size_t qhead;
-    vector<clause*> clauses;
+    int             n;
+    size_t          qhead;
     vector<clause*> reason;
     vector<LBool>   assign;
     vector<int>     level;
@@ -74,12 +68,10 @@ class Mini2Sat{
     vector<Lit>     trail;
     vector<int>     trail_lim;
     vector<vector<Watcher> > watch;
-    
-    double         var_inc;
-    vector<double> activity;
+    double          var_inc;
+    vector<double>  activity;
     set<pair<double, int> > order;
     
-    inline LBool Value(int x) const { return assign[x]; }
     inline LBool Value(Lit p) const { return assign[p.Var()] ^ p.Sign(); }
     inline int DecisionLevel(){ return trail_lim.size();}
     
@@ -90,19 +82,17 @@ class Mini2Sat{
         if (activity[x] <= 1e100) return;
         
         auto tmp = order;       // rescale
-        for (auto &p : tmp) {
-            order.erase(p);
-            order.insert(make_pair(p.first * 1e-100, p.second));
-        }
-        for (int v = 1; v < nVars; v++) activity[v] *= 1e-100;
+        order.clear();
+        for (auto &p : tmp) order.insert(make_pair(p.first * 1e-100, p.second));
+        for (int v = 1; v < n; v++) activity[v] *= 1e-100;
         var_inc *= 1e-100;
     }
-
+    
     int SelectVariable(){
         while (!order.empty()){
             auto p = *order.rbegin();
             order.erase(p);
-            if (Value(p.second) == LUndef) return p.second;
+            if (Value(Lit(p.second)) == LUndef) return p.second;
         }
         return -1;
     }
@@ -114,23 +104,24 @@ class Mini2Sat{
     
     bool Init(const vector<vector<int> > &cs){
         vector<clause> cls(cs.size());
-        nVars = qhead = 0;
+        n = qhead = 0;
         for (size_t i = 0; i < cs.size(); i++){
             for (auto l : cs[i]) {
                 cls[i].push_back(l > 0 ? Lit(l) : ~Lit(-l));
-                nVars = max(nVars, abs(l) + 1);
+                n = max(n, abs(l) + 1);
             }
         }
         trail.clear();
+        order.clear();
         trail_lim.clear();
-        assign   .resize(nVars, LUndef);
-        level    .resize(nVars, -1);
-        reason   .resize(nVars, NULL);
-        seen     .resize(nVars, false);
-        activity .resize(nVars, 0.0);
-        watch.resize    (nVars * 2);
+        assign   .resize(n, LUndef);
+        level    .resize(n, -1);
+        reason   .resize(n, NULL);
+        seen     .resize(n, false);
+        activity .resize(n, 0.0);
+        watch.resize    (n * 2);
         var_inc = 1.01;
-        for (int v = 1; v < nVars; v++) order.insert(make_pair(0.0, v));
+        for (int v = 1; v < n; v++) order.insert(make_pair(0.0, v));
         for (auto &c : cls) if (!AddClause(c, false)) return false;
         return true;
     }
@@ -149,7 +140,6 @@ class Mini2Sat{
         for (int c = trail.size() - 1; c >= trail_lim[level]; c--){
             int x     = trail[c].Var();
             assign[x] = LUndef;
-            reason[x] = NULL;
             UndoActivity(x);
         }
         trail.resize(trail_lim[level]);
@@ -209,7 +199,6 @@ class Mini2Sat{
             }
             watch[(~(*c)[0]).ToInt()].push_back(Watcher(c, (*c)[1]));
             watch[(~(*c)[1]).ToInt()].push_back(Watcher(c, (*c)[0]));
-            clauses.push_back(c);
         }
         return true;
     }
@@ -222,12 +211,11 @@ class Mini2Sat{
             
             size_t i = 0, j = 0;
             for (; i < ws.size(); ){
-                if (Value(ws[i].blocker) == LTrue){ ws[j++] = ws[i++]; continue;}
-                clause &c         = *ws[i++].c;
+                if (Value(ws[i].second) == LTrue){ ws[j++] = ws[i++]; continue;}
+                clause &c = *ws[i++].first;
                 if (c[0] == ~p) swap(c[0], c[1]);
-                Lit first = c[0];
-                Watcher w(&c, first);
-                if (Value(first) == LTrue){ ws[j++] = w; continue;}
+                Watcher w(&c, c[0]);
+                if (Value(c[0]) == LTrue){ ws[j++] = w; continue;}
                 
                 for (size_t k = 2; k < c.size(); k++)
                     if (Value(c[k]) != LFalse){
@@ -237,22 +225,20 @@ class Mini2Sat{
                     }
                 
                 ws[j++] = w;
-                if (Value(first) == LFalse){
+                if (Value(c[0]) == LFalse){
                     confl = &c;
                     qhead = trail.size();
                     while (i < ws.size()) ws[j++] = ws[i++];
-                } else 
-                    Assign(first, &c);
+                } else
+                    Assign(c[0], &c);
             NextClause: ;
             }
             ws.resize(j);
         }
         return confl;
     }
-    
 public:
     vector<bool>    model;
-    ~Mini2Sat(){ for (auto c : clauses) delete c; }
     
     bool Solve(const vector<vector<int> > &cs){
         if (!Init(cs)) return false;        
@@ -269,9 +255,8 @@ public:
             } else {
                 int next = SelectVariable();
                 if (next == -1){
-                    model.resize(nVars, false);
-                    for (int v = 1; v < nVars; v++)
-                        if (assign[v] == LTrue) model[v] = true;
+                    model.resize(n, false);
+                    for (int v = 1; v < n; v++) model[v] = assign[v] == LTrue;
                     return true;
                 }
                 trail_lim.push_back(trail.size());
