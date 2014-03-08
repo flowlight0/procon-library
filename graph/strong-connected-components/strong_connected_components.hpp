@@ -4,8 +4,11 @@
 O(V + E)
 ***********************************************************/
 
+#include <stack>
+#include <queue>
 #include <vector>
 #include <cstdlib>
+#include <cassert>
 #include <algorithm>
 
 class StrongConnectedComponent{
@@ -16,17 +19,40 @@ private:
     std::vector<int>  scc;
     
     void dfs(int v, std::vector<int> &vs, const Graph &G){
-        visit[v] = true;
-        for (size_t i = 0; i < G[v].size(); i++)
-            if (!visit[G[v][i]]) dfs(G[v][i], vs, G);
-        vs.push_back(v);
+        std::stack <int> to_visit;
+        std::vector<int> iters(V, 0);
+        to_visit .push(v);
+        
+        while (!to_visit.empty()){
+            int    v = to_visit.top(); to_visit.pop();
+            if (iters[v] == 0) visit[v] = true;
+            
+            if (iters[v] == (int)G[v].size()){
+                vs.push_back(v);
+            } else {
+                int to = G[v][iters[v]];
+                to_visit.push(v);
+                iters[v]++;
+                if (!visit[to]) to_visit.push(to);
+            }
+        }
     }
-
-    void rdfs(int v, int id, const Graph &G){
-        visit [v] = true;
-        scc   [v] = id;
-        for (size_t i = 0; i < G[v].size(); i++)
-            if (!visit[G[v][i]]) rdfs(G[v][i], id, G);
+    
+    void rbfs(int s, int id, const Graph &G){
+        std::queue<int> que;
+        que.push(s);
+        visit[s] = true;
+        scc[s]   = id;
+        while (!que.empty()){
+            int v = que.front(); que.pop();
+            for (auto to : G[v]){
+                if (!visit[to]){
+                    visit[to] = true;
+                    scc[to]   = id;
+                    que.push(to);
+                }
+            }
+        }
     }
     
 public:
@@ -39,10 +65,11 @@ public:
                 rG[G[v][i]].push_back(v);
         std::vector<int> vs;
         for (size_t v = 0; v < V; v++) if (!visit[v]) dfs(v, vs, G);
+        assert(vs.size() == V);
         std::reverse(vs.begin(), vs.end());
         std::fill(visit.begin(), visit.end(), false);
         int id = 0;
-        for (size_t v = 0; v < V; v++) if (!visit[vs[v]]) rdfs(vs[v], id++, rG);
+        for (size_t v = 0; v < V; v++) if (!visit[vs[v]]) rbfs(vs[v], id++, rG);
     }
     int operator[](size_t idx) const { return scc[idx]; }
 };
@@ -52,6 +79,7 @@ public:
 http://uva.onlinejudge.org/index.php?option=com_onlinejudge&Itemid=8&page=show_problem&category=24&problem=183
 ***********************************************************/
 
+/***********************************************************
 #include <iostream>
 #include <string>
 #include <map>
@@ -97,3 +125,4 @@ int main(){
         }
     }
 }
+ ***********************************************************/

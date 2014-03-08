@@ -1,4 +1,4 @@
-CXX = g++ -std=c++11
+CXX = clang++ -std=c++11
 CXXFLAGS = -g -Wall -Wextra -O3
 
 HEADERS = $(wildcard *.hpp)
