@@ -26,7 +26,6 @@ private:
         while (!to_visit.empty()){
             int    v = to_visit.top(); to_visit.pop();
             if (iters[v] == 0) visit[v] = true;
-            
             if (iters[v] == (int)G[v].size()){
                 vs.push_back(v);
             } else {

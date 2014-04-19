@@ -10,7 +10,6 @@ Suffix ArrayからのLCPのO(N)構築
 Juha Karkkainen and Peter Sanders "Simple Linear Work Suffix Array Construction"
 - LCPのコードは蟻本ほぼそのまま
 
-
 verified at
 http://www.spoj.com/problems/SARRAY/ (構築)
 http://www.spoj.com/problems/SUBST1/ (LCP)
@@ -30,26 +29,22 @@ http://www.spoj.com/problems/SUBST1/ (LCP)
 class SuffixArray{
     typedef std::vector<int> Array;
   
-    size_t vec_size;
-    Array  org_vec;
-    Array  suf_arr;
-    Array  lcp_arr;
-    Array  rank;
-
-    struct LcpInverval{
-        int up;
-        int down;
-        int next;
-        LcpInverval(){}
-        LcpInverval(int u, int d, int n) : up(u), down(d), next(n){}
-    };
-
+    int   size;
+    Array org_vec;
+    Array suf;
+    Array lcp;
+    Array rank;
+    
     inline bool Leq(int a1, int a2, int b1, int b2){
         return a1 != b1 ? a1 < b1 : a2 <= b2;
     }
   
     inline bool Leq(int a1, int a2, int a3, int b1, int b2, int b3){
         return a1 != b1 ? a1 < b1 : Leq(a2, a3, b2, b3);
+    }
+
+    inline int GetI(int p, int n){
+        return p < n ? p * 3 + 1 : (p - n) * 3 + 2;
     }
     
     void RadixPass(Array &a, Array &b, const Array &s,
@@ -117,13 +112,12 @@ class SuffixArray{
         for (int i = 0, j = 0; i < n02; i++){
             if(suf12[i] < n0) S0[j++] = 3 * suf12[i];
         }
-    
+        
         RadixPass(S0, suf0, S, 0, n0, S.size());
     
         int t = n0 - n1, p = 0, k = 0;
         while(t < n02 && p < n0){
-#define GetI() (suf12[t]<n0 ? suf12[t]*3+1 : (suf12[t]-n0)*3+2)
-            int i        = GetI();
+            int i        = GetI(suf12[t], n0);
             int j        = suf0[p];
             bool small12 = (suf12[t] < n0) ? 
                 Leq(S[i], S12[suf12[t]+n0], S[j], S12[j/3]) :
@@ -135,57 +129,39 @@ class SuffixArray{
             }
             k++;
         }
-        while(t < n02){ suf[k++] = GetI(); t++;}
+        while(t < n02){ suf[k++] = GetI(suf12[t], n0); t++;}
         while(p < n0 ){ suf[k++] = suf0[p++]; }
     }
     
     void BuildLcp(){
-        for(size_t i = 0; i < vec_size; i++)
-            rank[suf_arr[i]] = i;
-        
+        for(int i = 0; i < size; i++) rank[suf[i]] = i;
         int h = 0;
-        for(size_t i = 0; i < vec_size; i++){
-            size_t j = vec_size;
-            if((size_t)rank[i] + 1 < vec_size) j = suf_arr[rank[i] + 1];
-            if(h > 0) h--;
-            for(;j + h < vec_size && i + h < vec_size; h++)
+        for(int i = 0; i < size; i++){
+            int j = rank[i] + 1 < size ? suf[rank[i] + 1] : size;
+            for(h = std::max(0, h - 1); std::max(i, j) + h < size; h++)
                 if(org_vec[j + h] != org_vec[i + h]) break;
-            lcp_arr[rank[i]] = h;
+            lcp[rank[i]] = h;
         }
     }
-
+    
 public:
     SuffixArray(const Array &vec){ Construct(vec);}
-    SuffixArray() {}
     
     void Construct(const Array &vec_){
-        vec_size = vec_.size();
-        org_vec  = vec_;
-        
-        for(int i = 0; i < 3; i++){
-            org_vec.push_back(0);
-        }
-    
-        suf_arr.resize(org_vec.size());
-        lcp_arr.resize(org_vec.size());
-        rank.resize(org_vec.size());
-        
-        BuildSa (org_vec, suf_arr, vec_size);
+        size    = vec_.size();
+        org_vec = vec_;
+        for(int i = 0; i < 3; i++) org_vec.push_back(0);
+        suf  .resize(org_vec.size());
+        lcp  .resize(org_vec.size());
+        rank .resize(org_vec.size());
+        BuildSa (org_vec, suf, size);
         BuildLcp();
     }
     
-    int operator[] (size_t pos) const { return suf_arr[pos]; }
-    int Height     (size_t pos) const { return lcp_arr[pos]; }
+    int operator[] (size_t pos) const { return suf[pos]; }
+    int Height     (size_t pos) const { return lcp[pos]; }
     int Rank       (size_t pos) const { return rank[pos]; }
-    size_t Size() const { return vec_size; }
-
-    // std::vector<LcpInverval> LcpIntervalTree(){
-    //     int n = this->Size();
-    //     std::vector<LcpInverval> intervals(n);
-    //     std::stack<int> st;
-    //     st.push(0);
-    // }
-
+    size_t Size() const { return size; }
 };
 
 #endif

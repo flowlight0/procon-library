@@ -2,34 +2,36 @@
 
 class Fraction{
     typedef long long ll;
-    ll numer;
-    ll denom;
     
     inline ll abs(ll v) { return v < 0 ? -v : v; }
     ll gcd(ll u, ll v)  { return v == 0 ? u : gcd(v, u % v); }
     
     void normalize(){
-        if (denom < 0){
-            denom *= -1;
-            numer *= -1;
+        if (denominator < 0){
+            denominator *= -1;
+            numerator *= -1;
         }
-        ll d = gcd(abs(denom), abs(numer));
-        denom /= d;
-        numer /= d;
+        ll d = gcd(abs(denominator), abs(numerator));
+        denominator /= d;
+        numerator /= d;
     }
 public:
-    Fraction() : numer(0), denom(1) {}
-    Fraction(ll num, ll den) : numer(num), denom(den) { normalize(); }
+    
+    ll numerator;
+    ll denominator;
+
+    Fraction() : numerator(0), denominator(1) {}
+    Fraction(ll num, ll den) : numerator(num), denominator(den) { normalize(); }
     
     Fraction operator-() const {
-        return Fraction(-numer, denom);
+        return Fraction(-numerator, denominator);
     }
     
     Fraction &operator+=(const Fraction &rat){
-        ll new_den = denom * rat.denom;
-        ll new_num = numer * rat.denom + rat.numer * denom;
-        denom = new_den;
-        numer = new_num;
+        ll new_den = denominator * rat.denominator;
+        ll new_num = numerator * rat.denominator + rat.numerator * denominator;
+        denominator = new_den;
+        numerator = new_num;
         normalize();
         return *this;
     }
@@ -39,28 +41,28 @@ public:
     }
     
     Fraction &operator*=(const Fraction &rat){
-        ll new_den = denom * rat.denom;
-        ll new_num = numer * rat.numer;
-        denom = new_den;
-        numer = new_num;
+        ll new_den = denominator * rat.denominator;
+        ll new_num = numerator * rat.numerator;
+        denominator = new_den;
+        numerator = new_num;
         normalize();
         return *this;
     }
 
     Fraction &operator/=(const Fraction &rat){
-        return (*this *= Fraction(rat.denom, rat.numer));
+        return (*this *= Fraction(rat.denominator, rat.numerator));
     }
 
     bool operator==(const Fraction &rat) const {
-        return this->numer == rat.numer && this->denom == rat.denom;
+        return this->numerator == rat.numerator && this->denominator == rat.denominator;
     }
     
     Fraction abs(){
-        return Fraction(abs(numer), denom);
+        return Fraction(abs(numerator), denominator);
     }
 
     friend std::ostream &operator<<(std::ostream &out, const Fraction &rat){
-        out << rat.numer << "/" << rat.denom;
+        out << rat.numerator << "/" << rat.denominator;
         return out;
     }
 
