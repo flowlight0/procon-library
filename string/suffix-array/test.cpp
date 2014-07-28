@@ -34,9 +34,9 @@ void LCPCheck(SuffixArray sa, const vector<int> &array){
             if (array[a + c] == array[b + c]) c++;
             else break;
         }
-        ASSERT_EQ(sa.Height(i), c);
+        ASSERT_EQ(sa.get_height(i), c);
     }
-    ASSERT_EQ(sa.Height(array.size() - 1), 0);
+    ASSERT_EQ(sa.get_height(array.size() - 1), 0);
 } 
 
 TEST(SUFARY_TEST, SMALL){
@@ -66,7 +66,7 @@ TEST(LCP_TEST, SMALL){
     vector<int> array;
     for (char c: str) array.push_back(c);
     SuffixArray sa(array);
-    for (size_t i = 0; i < array.size(); i++) ASSERT_EQ(i, sa.Rank(sa[i]));
+    for (size_t i = 0; i < array.size(); i++) ASSERT_EQ(i, sa.get_rank(sa[i]));
     LCPCheck(sa, array);
 }
 
