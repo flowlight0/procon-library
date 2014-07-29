@@ -25,6 +25,7 @@ http://www.spoj.com/problems/SUBST1/ (LCP)
 #include <stack>
 #include <iostream>
 #include <cassert>
+using namespace std;
 
 class SuffixArray{
   typedef std::vector<int> Array;
@@ -34,7 +35,9 @@ class SuffixArray{
   Array suf;
   Array lcp;
   Array rank;
-    
+  std::vector<Array> rmq;
+  bool use_rmq;
+  
   inline bool leq(int a1, int a2, int b1, int b2){
     return a1 != b1 ? a1 < b1 : a2 <= b2;
   }
@@ -143,25 +146,54 @@ class SuffixArray{
       lcp[rank[i]] = h;
     }
   }
+  
+  void build_rmq(){
+    rmq.clear();
+    for (int r = 1; r <= size; r <<= 1){
+      Array rmq_(size);
+      Array &pre = rmq.empty() ? rmq_ : rmq.back();
+      
+      for (int i = 0; i <= size - r; i++){
+        if (rmq.empty()){
+          rmq_[i] = lcp[i];
+        } else {
+          rmq_[i]  = std::min(pre[i], pre[i + (r >> 1)]);
+        }
+      }
+      rmq.push_back(rmq_);
+    }
+  }
     
 public:
-  SuffixArray(const Array &vec){ construct(vec);}
+  SuffixArray(const Array &vec, bool use_rmq = false){ construct(vec, use_rmq);}
     
-  void construct(const Array &vec_){
+  void construct(const Array &vec_, bool use_rmq_){
+    use_rmq = use_rmq_;
     size    = vec_.size();
     org_vec = vec_;
     for(int i = 0; i < 3; i++) org_vec.push_back(0);
     suf  .resize(org_vec.size());
     lcp  .resize(org_vec.size());
     rank .resize(org_vec.size());
+    
     build_sa (org_vec, suf, size);
     build_lcp();
+    if (use_rmq) build_rmq();
   }
-    
+
   int operator[](size_t pos) const { return suf[pos]; }
   int get_height(size_t pos) const { return lcp[pos]; }
   int get_rank  (size_t pos) const { return rank[pos]; }
-  size_t get_size() const { return size; }
+  int get_size() const { return size; }
+  int get_lcp(int l, int r) const {
+    if (!use_rmq || r - l < 1){
+      return -1;
+    } else {
+      int k = 31 - __builtin_clz(r - l);
+      return std::min(rmq[k][l], rmq[k][r - (1 << k)]);
+    }
+  }
 };
+
 
 #endif
