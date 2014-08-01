@@ -195,5 +195,4 @@ public:
   }
 };
 
-
 #endif
