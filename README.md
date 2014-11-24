@@ -1,8 +1,7 @@
-flowlight-library
+procon-library
 =================
 
-Algorithm library for Programming Contest
-
+主にTopcoderやcodeforcesといったソースコードのコピペが許されるプログラミングコンテストを対象としたライブラリです。
 
 Graph
 -----------------
