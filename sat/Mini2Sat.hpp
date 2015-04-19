@@ -202,27 +202,30 @@ class Mini2Sat{
     }
     return true;
   }
-    
+
+  int bcp_count;
   clause *Bcp(){
     clause *confl = NULL;
     while (qhead < trail.size()){
       Lit p = trail[qhead++];
       vector<Watcher> &ws = watch[p.ToInt()];
-            
       size_t i = 0, j = 0;
       for (; i < ws.size(); ){
+        
         if (Value(ws[i].second) == LTrue){ ws[j++] = ws[i++]; continue;}
         clause &c = *ws[i++].first;
         if (c[0] == ~p) swap(c[0], c[1]);
         Watcher w(&c, c[0]);
         if (Value(c[0]) == LTrue){ ws[j++] = w; continue;}
                 
-        for (size_t k = 2; k < c.size(); k++)
+        for (size_t k = 2; k < c.size(); k++){
+          bcp_count++;
           if (Value(c[k]) != LFalse){
             swap(c[1], c[k]);
             watch[(~c[1]).ToInt()].push_back(w);
             goto NextClause;
           }
+        }
                 
         ws[j++] = w;
         if (Value(c[0]) == LFalse){
@@ -241,6 +244,7 @@ public:
   vector<bool>    model;
     
   bool Solve(const vector<vector<int> > &cs){
+    bcp_count = 0;
     if (!Init(cs)) return false;        
     for(;;){
       clause *confl = Bcp();
@@ -257,6 +261,7 @@ public:
         if (next == -1){
           model.resize(n, false);
           for (int v = 1; v < n; v++) model[v] = assign[v] == LTrue;
+          cout << bcp_count << endl;
           return true;
         }
         trail_lim.push_back(trail.size());
