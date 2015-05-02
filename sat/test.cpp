@@ -9,7 +9,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/foreach.hpp>
 
-#include "Mini2Sat.hpp"
+#include "sat_solver.hpp"
 using namespace std;
 
 TEST(SMALL_TEST, TEST0){
@@ -17,7 +17,7 @@ TEST(SMALL_TEST, TEST0){
     vector<int> c1 = {1, -2};
     vector<int> c2 = {2, 3};
     vector<int> c3 = {-3};
-    Mini2Sat solver;
+    SatSolver solver;
     vector<vector<int> > cs;
     cs.push_back(c0);
     cs.push_back(c1);
@@ -36,7 +36,7 @@ TEST(SMALL_TEST, TEST1){
     vector<int> c2 = {2, 3};
     vector<int> c3 = {-3};
     vector<int> c4 = {-1, -2};
-    Mini2Sat solver;
+    SatSolver solver;
     vector<vector<int> > cs;
     cs.push_back(c0);
     cs.push_back(c1);
@@ -66,7 +66,7 @@ TEST(AIM_TEST, YES){
     BOOST_FOREACH(const fs::path& p, make_pair(fs::directory_iterator(dir),
                                                fs::directory_iterator())) {
         if (!fs::is_directory(p)){
-            Mini2Sat solver;
+            SatSolver solver;
             vector<vector<int> > cs;
             load_file(p.string(), cs);
             cerr << p.string() << endl;
@@ -82,7 +82,7 @@ TEST(AIM_TEST, NO){
     BOOST_FOREACH(const fs::path& p, make_pair(fs::directory_iterator(dir),
                                                fs::directory_iterator())) {
         if (!fs::is_directory(p)){
-            Mini2Sat solver;
+            SatSolver solver;
             vector<vector<int> > cs;
             load_file(p.string(), cs);
             cerr << p.string() << endl;
@@ -111,7 +111,7 @@ TEST(SUDOKU_TEST, YES){
         "--F---C--D--H-N-", 
     };
     
-    Mini2Sat solver;
+    SatSolver solver;
     int n = board.size();
     vector<vector<int> > cs;
     

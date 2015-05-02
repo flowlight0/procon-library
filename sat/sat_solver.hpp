@@ -33,7 +33,7 @@ this solver does not release allocated memory.
 
 using namespace std;
 
-class Mini2Sat{
+class SatSolver{
   struct Lit{
     int x;
     Lit() : x(-1) { }
@@ -261,7 +261,6 @@ public:
         if (next == -1){
           model.resize(n, false);
           for (int v = 1; v < n; v++) model[v] = assign[v] == LTrue;
-          cout << bcp_count << endl;
           return true;
         }
         trail_lim.push_back(trail.size());
