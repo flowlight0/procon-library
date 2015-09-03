@@ -97,11 +97,6 @@ class SatSolver{
     return -1;
   }
     
-  void UndoActivity(int x){
-    auto p = make_pair(activity[x], x);
-    if (order.count(p) == 0) order.insert(p);
-  }
-    
   bool Init(const vector<vector<int> > &cs){
     vector<clause> cls(cs.size());
     n = qhead = 0;
@@ -114,12 +109,12 @@ class SatSolver{
     trail.clear();
     order.clear();
     trail_lim.clear();
-    assign   .resize(n, LUndef);
-    level    .resize(n, -1);
-    reason   .resize(n, NULL);
-    seen     .resize(n, false);
-    activity .resize(n, 0.0);
-    watch.resize    (n * 2);
+    assign   = vector<LBool>(n, LUndef);
+    level    = vector<int>(n, -1);
+    reason   = vector<clause*>(n, nullptr);
+    seen     = vector<bool>(n, false);
+    activity = vector<double>(n, 0.0);
+    watch    = vector<vector<Watcher> > (n * 2);
     var_inc = 1.01;
     for (int v = 1; v < n; v++) order.insert(make_pair(0.0, v));
     for (auto &c : cls) if (!AddClause(c, false)) return false;
@@ -140,7 +135,10 @@ class SatSolver{
     for (int c = trail.size() - 1; c >= trail_lim[level]; c--){
       int x     = trail[c].Var();
       assign[x] = LUndef;
-      UndoActivity(x);
+      pair<double, int> p (activity[x], x);
+      if (order.count(p) == 0){
+        order.insert(p);
+      }
     }
     trail.resize(trail_lim[level]);
     trail_lim.resize(level);
@@ -186,13 +184,13 @@ class SatSolver{
       for (auto l : *c) if (Value(l) != LFalse) (*c)[j++] = l;
       c->resize(j);
     }
-    if (c->size() == 0)
+    if (c->size() == 0) {
       return false;
-    else if (c->size() == 1)
-      Assign((*c)[0], NULL);
-    else {
+    } else if (c->size() == 1){ 
+      Assign(c->at(0), nullptr);
+    } else {
       if (learnt){
-        Assign((*c)[0], c);
+        Assign(c->at(0), c);
         for (size_t i = 2; i < c->size(); i++)
           if (level[(*c)[i].Var()] > level[(*c)[1].Var()])
             swap((*c)[1], (*c)[i]);
@@ -248,8 +246,8 @@ public:
     if (!Init(cs)) return false;        
     for(;;){
       clause *confl = Bcp();
-      if (confl != NULL){
-        if (DecisionLevel() == 0) return false;
+      if (confl != nullptr){
+        if (DecisionLevel() == 0) return false; 
         int         bt_level;
         vector<Lit> learnt;
         Analyze(confl, learnt, bt_level);
