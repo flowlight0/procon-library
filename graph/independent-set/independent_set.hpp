@@ -5,34 +5,34 @@
 #include <vector>
 #include <iostream>
 #include <cassert>
+#include <bitset>
 
-class IndependentSet{
+template <size_t V> class IndependentSet{
   typedef unsigned long long ll;
-  std::vector<ll> graph;
-  ll              used;
-  inline int  degree(int v) { return __builtin_popcountll(graph[v] & ~used); }
-public:
-  
-  IndependentSet(int V) : graph(V), used(0) {
-    assert(V < 64);
-    for (int i = 0; i < V; i++){
-      graph[i] |= 1LL << i;
+  std::vector<std::bitset<V> > graph;
+  std::bitset<V> used_mask;
+  inline int  degree(int v) { return (graph[v] & ~used_mask).count(); }
+public: 
+  IndependentSet() : graph(V) {
+    for (size_t v = 0; v < V; v++){
+      graph[v].set(v, 1);
     }
   }
   
-  void add_edge(int u, int v){
+  void AddEdge(int u, int v){
     assert(u < (int)graph.size() && v < (int)graph.size());
-    graph[u] |= 1LL << v;
-    graph[v] |= 1LL << u;
+    graph[u].set(v, 1);
+    graph[v].set(u, 1);
   }
   
-  int solve(){
+  int Solve_(){
+    // std::cout << used_mask << std::endl;
     int res      = 0;
     int next     = -1;
-    ll  old_used = used;
+    std::bitset<V> old_mask = used_mask;
     
     for (size_t v = 0; v < graph.size(); v++){
-      if (used & (1LL << v)){
+      if (used_mask.test(v)){
         continue;
       } else if (degree(v) <=  1){
         next = v;
@@ -45,15 +45,19 @@ public:
     if (next == -1){
       return 0;
     } else if (degree(next) > 1){
-      used |= 1LL << next;
-      res = solve();
-      used = old_used;
+      used_mask.set(next, 1);
+      res = Solve_();
+      used_mask.set(next, 0);
     }
-    
-    used |= graph[next];
-    res = std::max(res, solve() + 1);
-    used = old_used;
+
+    used_mask |= graph[next];
+    res = std::max(res, Solve_() + 1);
+    used_mask = old_mask;
     return res;
+  }
+
+  int Solve(int N){
+    return Solve_() - (V - N);
   }
 };
 
